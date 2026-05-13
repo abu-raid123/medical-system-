@@ -48,11 +48,11 @@ export async function GET(
 
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const W = 210;
+  const H = 297;
 
   // Load and register Arabic fonts
   const amiriRegular = loadFont("fonts/Amiri-Regular.ttf");
   const amiriBold = loadFont("fonts/Amiri-Bold.ttf");
-
   pdf.addFileToVFS("Amiri-Regular.ttf", amiriRegular);
   pdf.addFont("Amiri-Regular.ttf", "Amiri", "normal");
   pdf.addFileToVFS("Amiri-Bold.ttf", amiriBold);
@@ -80,7 +80,6 @@ export async function GET(
     color: { dark: "#000000", light: "#ffffff" },
   });
 
-  // Helper: set font based on content
   function setFont(style: "normal" | "bold") {
     pdf.setFont("Amiri", style);
   }
@@ -95,142 +94,204 @@ export async function GET(
 
   // ========== PAGE 1 ==========
 
-  // Geometric backgrounds
+  // Geometric background top-right
   if (geoBgTop) {
-    try { pdf.addImage(geoBgTop, "PNG", W - 90, 0, 90, 30, undefined, "FAST"); } catch { /* skip */ }
-  }
-  if (geoBgBottom) {
-    try { pdf.addImage(geoBgBottom, "PNG", 0, 267, 90, 30, undefined, "FAST"); } catch { /* skip */ }
+    try { pdf.addImage(geoBgTop, "PNG", W - 80, 0, 80, 28, undefined, "FAST"); } catch { /* skip */ }
   }
 
-  // Header: Seha logo + Kingdom text
+  // Header: Seha logo (left) + Kingdom text (center)
   if (sehaLogo) {
-    try { pdf.addImage(sehaLogo, "PNG", 12, 8, 35, 20, undefined, "FAST"); } catch { /* skip */ }
+    try { pdf.addImage(sehaLogo, "PNG", 10, 10, 30, 18, undefined, "FAST"); } catch { /* skip */ }
   }
   if (kingdomText) {
-    try { pdf.addImage(kingdomText, "PNG", 60, 8, 70, 18, undefined, "FAST"); } catch { /* skip */ }
+    try { pdf.addImage(kingdomText, "PNG", 55, 10, 65, 16, undefined, "FAST"); } catch { /* skip */ }
   }
 
   // Title
   setFont("bold");
-  pdf.setFontSize(20);
-  pdf.setTextColor(47, 109, 180);
-  textSmart("تقرير إجازة مرضية", W / 2, 42, { align: "center" });
-  pdf.setFontSize(17);
-  textSmart("Sick Leave Report", W / 2, 50, { align: "center" });
+  pdf.setFontSize(18);
+  pdf.setTextColor(43, 61, 119);
+  textSmart("تقرير إجازة مرضية", W / 2, 40, { align: "center" });
+  pdf.setFontSize(14);
+  pdf.setTextColor(43, 61, 119);
+  textSmart("Sick Leave Report", W / 2, 48, { align: "center" });
 
-  // Table
-  const tableTop = 58;
-  const tableLeft = 12;
-  const tableRight = W - 12;
+  // ===== TABLE with 4 columns and full grid =====
+  const tableTop = 55;
+  const tableLeft = 10;
+  const tableRight = W - 10;
   const tableWidth = tableRight - tableLeft;
-  const col2 = tableLeft + tableWidth * 0.18;
-  const col3 = tableLeft + tableWidth * 0.5;
-  const col4 = tableLeft + tableWidth * 0.82;
-  let y = tableTop;
-  const rowH = 11;
 
-  function drawRow(
-    leftLabel: string,
-    centerValue: string,
-    centerValue2: string,
-    rightLabel: string,
-    isHeader: boolean = false
+  // Column positions (4 columns): EnLabel | EnValue | ArValue | ArLabel
+  const colWidths = [0.20, 0.30, 0.25, 0.25];
+  const colX = [
+    tableLeft,
+    tableLeft + tableWidth * colWidths[0],
+    tableLeft + tableWidth * (colWidths[0] + colWidths[1]),
+    tableLeft + tableWidth * (colWidths[0] + colWidths[1] + colWidths[2]),
+  ];
+
+  let y = tableTop;
+  const rowH = 12;
+  const borderColor = { r: 180, g: 180, b: 180 };
+
+  function drawTableRow(
+    enLabel: string,
+    enValue: string,
+    arValue: string,
+    arLabel: string,
+    isDurationHeader: boolean = false
   ) {
-    if (isHeader) {
+    const cellPad = 3;
+    const textY = y + rowH / 2 + 1.5;
+
+    // Fill for duration header row
+    if (isDurationHeader) {
       pdf.setFillColor(43, 61, 119);
       pdf.rect(tableLeft, y, tableWidth, rowH, "F");
       pdf.setTextColor(255, 255, 255);
     } else {
-      pdf.setDrawColor(224, 224, 224);
-      pdf.line(tableLeft, y + rowH, tableRight, y + rowH);
       pdf.setTextColor(43, 61, 119);
     }
 
-    const textY = y + rowH * 0.65;
-    pdf.setFontSize(9);
+    // Draw horizontal line at bottom of row
+    pdf.setDrawColor(borderColor.r, borderColor.g, borderColor.b);
+    pdf.setLineWidth(0.3);
+    pdf.line(tableLeft, y + rowH, tableRight, y + rowH);
+
+    // Draw vertical column separators
+    for (let i = 1; i < 4; i++) {
+      pdf.line(colX[i], y, colX[i], y + rowH);
+    }
+
+    // Text in each column
+    pdf.setFontSize(8);
+
+    // Col 1: English label (left-aligned)
     setFont("bold");
-    textSmart(leftLabel, tableLeft + 3, textY);
+    pdf.text(enLabel, colX[0] + cellPad, textY);
+
+    // Col 2: English value (center-aligned)
     setFont("normal");
-    pdf.setFontSize(9);
-    textSmart(centerValue, (col2 + col3) / 2, textY, { align: "center" });
-    textSmart(centerValue2, (col3 + col4) / 2, textY, { align: "center" });
+    const col2Center = (colX[1] + colX[2]) / 2;
+    pdf.text(enValue, col2Center, textY, { align: "center" });
+
+    // Col 3: Arabic value (center-aligned)
+    const col3Center = (colX[2] + colX[3]) / 2;
+    textSmart(arValue, col3Center, textY, { align: "center" });
+
+    // Col 4: Arabic label (right-aligned, inside cell)
     setFont("bold");
-    textSmart(rightLabel, tableRight - 3, textY, { align: "right" });
+    textSmart(arLabel, tableRight - cellPad, textY, { align: "right" });
 
     y += rowH;
   }
 
-  pdf.setDrawColor(224, 224, 224);
+  // Draw top border of table
+  pdf.setDrawColor(borderColor.r, borderColor.g, borderColor.b);
+  pdf.setLineWidth(0.3);
+  pdf.line(tableLeft, tableTop, tableRight, tableTop);
+  // Draw left and right borders will be drawn at the end
 
   const durationText = report.durationDays === 1 ? "day" : "days";
   const durationTextAr = report.durationDays === 1 ? "يوم" : "أيام";
 
-  drawRow("Leave ID", report.leaveId, "", "رمز الإجازة");
-  drawRow(
+  drawTableRow("Leave ID", report.leaveId, "", "رمز الإجازة");
+  drawTableRow(
     "Duration",
     `${report.durationDays} ${durationText} (${report.admissionDate} - ${report.dischargeDate})`,
     `${report.durationDays} ${durationTextAr}`,
     "مدة الإجازة",
     true
   );
-  drawRow("Admission Date", report.admissionDate, report.admissionDateHijri, "تاريخ الدخول");
-  drawRow("Discharge Date", report.dischargeDate, report.dischargeDateHijri, "تاريخ الخروج");
-  drawRow("Issue Date", report.issueDate, "", "تاريخ إصدار التقرير");
-  drawRow("Name", report.nameEn, report.nameAr, "الاسم");
-  drawRow("National ID / Iqama", report.nationalId, "", "رقم الهوية / الإقامة");
-  drawRow("Nationality", report.nationalityEn, report.nationalityAr, "الجنسية");
-  drawRow("Employer", report.employerEn, report.employerAr, "جهة العمل");
-  drawRow("Practitioner Name", report.practitionerNameEn, report.practitionerNameAr, "اسم الممارس");
-  drawRow("Position", report.positionEn, report.positionAr, "المسمى الوظيفي");
+  drawTableRow("Admission Date", report.admissionDate, report.admissionDateHijri, "تاريخ الدخول");
+  drawTableRow("Discharge Date", report.dischargeDate, report.dischargeDateHijri, "تاريخ الخروج");
+  drawTableRow("Issue Date", report.issueDate, "", "تاريخ إصدار التقرير");
+  drawTableRow("Name", report.nameEn, report.nameAr, "الاسم");
+  drawTableRow("National ID / Iqama", report.nationalId, "", "رقم الهوية / الإقامة");
+  drawTableRow("Nationality", report.nationalityEn, report.nationalityAr, "الجنسية");
+  drawTableRow("Employer", report.employerEn, report.employerAr, "جهة العمل");
+  drawTableRow("Practitioner Name", report.practitionerNameEn, report.practitionerNameAr, "اسم الممارس");
+  drawTableRow("Position", report.positionEn, report.positionAr, "المسمى الوظيفي");
 
-  // Draw table outer border
-  pdf.setDrawColor(224, 224, 224);
-  pdf.rect(tableLeft, tableTop, tableWidth, y - tableTop);
+  // Draw outer border of table (left + right vertical lines)
+  const tableBottom = y;
+  pdf.setDrawColor(borderColor.r, borderColor.g, borderColor.b);
+  pdf.setLineWidth(0.3);
+  pdf.line(tableLeft, tableTop, tableLeft, tableBottom);
+  pdf.line(tableRight, tableTop, tableRight, tableBottom);
 
-  // QR Code + verification text + MOH logo at bottom of page 1
-  const bottomY = 230;
+  // ===== BOTTOM VERIFICATION SECTION =====
+  const verifyTop = 210;
+  const verifyHeight = 55;
+  const verifyLeft = tableLeft;
+  const verifyRight = tableRight;
 
-  // QR Code
-  try { pdf.addImage(qrDataUrl, "PNG", 15, bottomY, 35, 35, undefined, "FAST"); } catch { /* skip */ }
+  // Draw border box for verification section
+  pdf.setDrawColor(borderColor.r, borderColor.g, borderColor.b);
+  pdf.setLineWidth(0.3);
+  pdf.rect(verifyLeft, verifyTop, verifyRight - verifyLeft, verifyHeight);
 
-  // Verification text
-  pdf.setFontSize(8);
-  pdf.setTextColor(51, 51, 51);
+  // Vertical divider in middle
+  const verifyMid = W / 2;
+  pdf.line(verifyMid, verifyTop, verifyMid, verifyTop + verifyHeight);
+
+  // LEFT half: QR Code + Arabic verification text
+  try {
+    pdf.addImage(qrDataUrl, "PNG", verifyLeft + 15, verifyTop + 4, 30, 30, undefined, "FAST");
+  } catch { /* skip */ }
+
   setFont("bold");
-  textSmart("للتحقق من بيانات التقرير يرجى التأكد من زيارة موقع منصة صحة الرسمي", W / 2, bottomY + 14, { align: "center" });
-  textSmart("To check the report please visit Seha's official website", W / 2, bottomY + 20, { align: "center" });
+  pdf.setFontSize(9);
+  pdf.setTextColor(43, 61, 119);
+  textSmart("للتحقق من بيانات التقرير يرجى التأكد من", (verifyLeft + verifyMid) / 2, verifyTop + 40, { align: "center" });
+  textSmart("زيارة موقع منصة صحة الرسمي", (verifyLeft + verifyMid) / 2, verifyTop + 46, { align: "center" });
 
-  // MOH Logo
+  // RIGHT half: MOH logo + English text
   if (mohLogo) {
-    try { pdf.addImage(mohLogo, "JPEG", W - 50, bottomY, 30, 30, undefined, "FAST"); } catch { /* skip */ }
+    try {
+      pdf.addImage(mohLogo, "JPEG", verifyMid + 25, verifyTop + 4, 30, 25, undefined, "FAST");
+    } catch { /* skip */ }
+  }
+
+  setFont("bold");
+  pdf.setFontSize(8);
+  pdf.setTextColor(43, 61, 119);
+  pdf.text("To check the report please visit Seha's", (verifyMid + verifyRight) / 2, verifyTop + 38, { align: "center" });
+  pdf.text("official website", (verifyMid + verifyRight) / 2, verifyTop + 43, { align: "center" });
+
+  // Kingdom text at bottom of page 1
+  if (kingdomText) {
+    try {
+      pdf.addImage(kingdomText, "PNG", 10, H - 25, 60, 15, "kingdomBottom", "FAST");
+    } catch { /* skip */ }
+  }
+
+  // Geometric background bottom-left
+  if (geoBgBottom) {
+    try { pdf.addImage(geoBgBottom, "PNG", 0, H - 30, 80, 28, undefined, "FAST"); } catch { /* skip */ }
   }
 
   // ========== PAGE 2 ==========
   pdf.addPage();
 
   // Hospital names
-  pdf.setFontSize(12);
+  pdf.setFontSize(14);
   setFont("bold");
   pdf.setTextColor(51, 51, 51);
-  textSmart(report.hospitalNameAr, 15, 18);
-  textSmart(report.hospitalNameEn, W - 15, 18, { align: "right" });
+  textSmart(report.hospitalNameAr, 15, 20);
+  pdf.text(report.hospitalNameEn, W - 15, 20, { align: "right" });
 
   // Separator line
   pdf.setDrawColor(204, 204, 204);
   pdf.setLineWidth(0.5);
-  pdf.line(15, 22, W - 15, 22);
-
-  // NHIC Logo
-  if (nhicLogo) {
-    try { pdf.addImage(nhicLogo, "PNG", W - 55, 25, 40, 25, undefined, "FAST"); } catch { /* skip */ }
-  }
+  pdf.line(15, 25, W - 15, 25);
 
   // Inquiry link
   pdf.setFont("Helvetica", "normal");
-  pdf.setFontSize(10);
+  pdf.setFontSize(9);
   pdf.setTextColor(47, 109, 180);
-  pdf.textWithLink(inquiryUrl, 15, 30, { url: inquiryUrl });
+  pdf.textWithLink(inquiryUrl, 15, 35, { url: inquiryUrl });
 
   // Time and Date
   setFont("normal");
@@ -243,13 +304,18 @@ export async function GET(
       hour12: true,
     }),
     15,
-    40
+    45
   );
-  pdf.text(formatFullDate(report.issueDate), 15, 46);
+  pdf.text(formatFullDate(report.issueDate), 15, 52);
+
+  // NHIC Logo on page 2 (right side)
+  if (nhicLogo) {
+    try { pdf.addImage(nhicLogo, "PNG", W - 55, 30, 40, 25, undefined, "FAST"); } catch { /* skip */ }
+  }
 
   // Add clickable link on QR area of page 1
   pdf.setPage(1);
-  pdf.link(15, bottomY, 35, 35, { url: inquiryUrl });
+  pdf.link(verifyLeft + 15, verifyTop + 4, 30, 30, { url: inquiryUrl });
 
   const pdfBuffer = Buffer.from(pdf.output("arraybuffer"));
 
