@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# نظام تقارير الإجازات المرضية - Sick Leave Report System
 
-## Getting Started
+نظام ويب ثنائي اللغة (عربي/إنجليزي) لإصدار تقارير الإجازات المرضية بصيغة PDF مع QR Code للتحقق.
 
-First, run the development server:
+## المميزات
+
+- صفحة تسجيل دخول محمية
+- نموذج إدخال بيانات ثنائي اللغة (عربي/إنجليزي)
+- تحويل تلقائي للتاريخ الهجري
+- توليد تقرير PDF مطابق للقالب الرسمي
+- توليد QR Code مع رابط للاستعلام
+- صفحة استعلام عن التقارير برمز الإجازة
+- تخزين دائم في قاعدة بيانات Supabase
+
+## التشغيل المحلي
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+يعمل على `http://localhost:3000` مع تخزين محلي (ملف JSON).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## النشر على Netlify مع Supabase
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. إنشاء مشروع Supabase (مجاني)
 
-## Learn More
+1. اذهب إلى [supabase.com](https://supabase.com) وأنشئ حساب
+2. أنشئ مشروع جديد (New Project)
+3. اذهب إلى **SQL Editor** والصق محتوى ملف `supabase-schema.sql`
+4. اضغط **Run** لإنشاء الجدول
 
-To learn more about Next.js, take a look at the following resources:
+### 2. الحصول على مفاتيح Supabase
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. اذهب إلى **Project Settings** → **API**
+2. انسخ:
+   - `Project URL` → هذا هو `NEXT_PUBLIC_SUPABASE_URL`
+   - `service_role` key → هذا هو `SUPABASE_SERVICE_ROLE_KEY`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. النشر على Netlify
 
-## Deploy on Vercel
+1. اذهب إلى [netlify.com](https://netlify.com)
+2. اضغط **Add new site** → **Import an existing project**
+3. اختر GitHub واختر هذا المستودع
+4. في **Environment variables** أضف:
+   - `NEXT_PUBLIC_SUPABASE_URL` = رابط مشروعك في Supabase
+   - `SUPABASE_SERVICE_ROLE_KEY` = مفتاح service_role
+5. اضغط **Deploy**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## بيانات الدخول
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- اسم المستخدم: `salah`
+- كلمة المرور: `773354060`
+
+## التقنيات
+
+- Next.js 16 (App Router)
+- Supabase (PostgreSQL)
+- jsPDF + Amiri Font (توليد PDF مع دعم العربية)
+- QR Code (qrcode)
+- Tailwind CSS

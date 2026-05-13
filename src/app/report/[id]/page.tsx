@@ -10,7 +10,7 @@ export default async function ReportPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const report = getReportById(id);
+  const report = await getReportById(id);
 
   if (!report) {
     return (

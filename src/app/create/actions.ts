@@ -66,7 +66,7 @@ export async function createReportAction(formData: FormData) {
     createdAt: new Date().toISOString(),
   };
 
-  saveReport(report);
+  await saveReport(report);
 
   redirect(`/report/${id}`);
 }

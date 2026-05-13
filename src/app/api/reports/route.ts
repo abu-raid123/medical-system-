@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     createdAt: new Date().toISOString(),
   };
 
-  saveReport(report);
+  await saveReport(report);
 
   return NextResponse.json({ success: true, id, leaveId });
 }
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const report = getReportByLeaveId(leaveId);
+  const report = await getReportByLeaveId(leaveId);
   if (!report) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }

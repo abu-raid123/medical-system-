@@ -85,7 +85,7 @@ export default async function InquiryPage({
   const params = await searchParams;
   const leaveId = params.leaveId ?? "";
   const searched = leaveId.length > 0;
-  const report = searched ? getReportByLeaveId(leaveId) ?? null : null;
+  const report = searched ? (await getReportByLeaveId(leaveId)) ?? null : null;
 
   return (
     <div
