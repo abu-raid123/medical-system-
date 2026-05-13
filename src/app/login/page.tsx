@@ -1,40 +1,12 @@
-"use client";
+import { loginAction } from "./actions";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-
-export default function LoginPage() {
-  const router = useRouter();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        router.push("/");
-        router.refresh();
-      } else {
-        setError("اسم المستخدم أو كلمة المرور غير صحيحة\nInvalid username or password");
-        setLoading(false);
-      }
-    } catch {
-      setError("حدث خطأ في الاتصال\nConnection error");
-      setLoading(false);
-    }
-  };
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const params = await searchParams;
+  const hasError = params.error === "1";
 
   return (
     <div
@@ -56,15 +28,14 @@ export default function LoginPage() {
           <p className="text-gray-500">Login to Medical Leave System</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form action={loginAction} className="space-y-5">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">
               اسم المستخدم / Username
             </label>
             <input
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              name="username"
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
               placeholder="أدخل اسم المستخدم"
@@ -77,26 +48,24 @@ export default function LoginPage() {
             </label>
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              name="password"
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
               placeholder="أدخل كلمة المرور"
             />
           </div>
 
-          {error && (
+          {hasError && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm whitespace-pre-line">
-              {error}
+              {"اسم المستخدم أو كلمة المرور غير صحيحة\nInvalid username or password"}
             </div>
           )}
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-[#2B3D77] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a2a5e] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#2B3D77] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a2a5e] transition-all"
           >
-            {loading ? "جاري الدخول..." : "دخول / Login"}
+            دخول / Login
           </button>
         </form>
       </div>
