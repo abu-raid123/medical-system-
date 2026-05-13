@@ -1,27 +1,14 @@
-"use client";
-
 import type { SickLeaveReport } from "@/lib/types";
 import { formatFullDate } from "@/lib/hijri";
-import { useEffect, useState } from "react";
-import QRCode from "qrcode";
 
 interface Props {
   report: SickLeaveReport;
   baseUrl: string;
+  qrDataUrl: string;
 }
 
-export default function ReportTemplate({ report, baseUrl }: Props) {
-  const [qrDataUrl, setQrDataUrl] = useState<string>("");
-
+export default function ReportTemplate({ report, baseUrl, qrDataUrl }: Props) {
   const inquiryUrl = `${baseUrl}/inquiry?leaveId=${report.leaveId}`;
-
-  useEffect(() => {
-    QRCode.toDataURL(inquiryUrl, {
-      width: 180,
-      margin: 1,
-      color: { dark: "#000000", light: "#ffffff" },
-    }).then(setQrDataUrl);
-  }, [inquiryUrl]);
 
   const durationText =
     report.durationDays === 1 ? "day" : "days";
