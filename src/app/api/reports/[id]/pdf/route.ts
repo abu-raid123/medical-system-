@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import fs from "fs";
 import path from "path";
 import { headers } from "next/headers";
+import { shapeArabicText } from "naqqash";
 
 function loadImageAsBase64(imagePath: string): string {
   const fullPath = path.join(process.cwd(), "public", imagePath);
@@ -12,6 +13,20 @@ function loadImageAsBase64(imagePath: string): string {
   const ext = path.extname(imagePath).replace(".", "").toLowerCase();
   const mime = ext === "jpg" || ext === "jpeg" ? "jpeg" : "png";
   return `data:image/${mime};base64,${buffer.toString("base64")}`;
+}
+
+function loadFont(fontPath: string): string {
+  const fullPath = path.join(process.cwd(), "public", fontPath);
+  const buffer = fs.readFileSync(fullPath);
+  return buffer.toString("base64");
+}
+
+function ar(text: string): string {
+  return shapeArabicText(text);
+}
+
+function hasArabic(text: string): boolean {
+  return /[\u0600-\u06FF]/.test(text);
 }
 
 export async function GET(
@@ -33,6 +48,15 @@ export async function GET(
 
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const W = 210;
+
+  // Load and register Arabic fonts
+  const amiriRegular = loadFont("fonts/Amiri-Regular.ttf");
+  const amiriBold = loadFont("fonts/Amiri-Bold.ttf");
+
+  pdf.addFileToVFS("Amiri-Regular.ttf", amiriRegular);
+  pdf.addFont("Amiri-Regular.ttf", "Amiri", "normal");
+  pdf.addFileToVFS("Amiri-Bold.ttf", amiriBold);
+  pdf.addFont("Amiri-Bold.ttf", "Amiri", "bold");
 
   // Load images
   let sehaLogo: string | null = null;
@@ -56,6 +80,19 @@ export async function GET(
     color: { dark: "#000000", light: "#ffffff" },
   });
 
+  // Helper: set font based on content
+  function setFont(style: "normal" | "bold") {
+    pdf.setFont("Amiri", style);
+  }
+
+  function textSmart(text: string, x: number, y: number, options?: { align?: "left" | "center" | "right" }) {
+    if (hasArabic(text)) {
+      pdf.text(ar(text), x, y, options);
+    } else {
+      pdf.text(text, x, y, options);
+    }
+  }
+
   // ========== PAGE 1 ==========
 
   // Geometric backgrounds
@@ -75,19 +112,18 @@ export async function GET(
   }
 
   // Title
-  pdf.setFont("Helvetica", "bold");
+  setFont("bold");
   pdf.setFontSize(20);
   pdf.setTextColor(47, 109, 180);
-  pdf.text("تقرير إجازة مرضية", W / 2, 42, { align: "center" });
+  textSmart("تقرير إجازة مرضية", W / 2, 42, { align: "center" });
   pdf.setFontSize(17);
-  pdf.text("Sick Leave Report", W / 2, 50, { align: "center" });
+  textSmart("Sick Leave Report", W / 2, 50, { align: "center" });
 
   // Table
   const tableTop = 58;
   const tableLeft = 12;
   const tableRight = W - 12;
   const tableWidth = tableRight - tableLeft;
-  const col1 = tableLeft;
   const col2 = tableLeft + tableWidth * 0.18;
   const col3 = tableLeft + tableWidth * 0.5;
   const col4 = tableLeft + tableWidth * 0.82;
@@ -113,19 +149,18 @@ export async function GET(
 
     const textY = y + rowH * 0.65;
     pdf.setFontSize(9);
-    pdf.setFont("Helvetica", "bold");
-    pdf.text(leftLabel, col1 + 3, textY);
-    pdf.setFont("Helvetica", "normal");
+    setFont("bold");
+    textSmart(leftLabel, tableLeft + 3, textY);
+    setFont("normal");
     pdf.setFontSize(9);
-    pdf.text(centerValue, (col2 + col3) / 2, textY, { align: "center" });
-    pdf.text(centerValue2, (col3 + col4) / 2, textY, { align: "center" });
-    pdf.setFont("Helvetica", "bold");
-    pdf.text(rightLabel, tableRight - 3, textY, { align: "right" });
+    textSmart(centerValue, (col2 + col3) / 2, textY, { align: "center" });
+    textSmart(centerValue2, (col3 + col4) / 2, textY, { align: "center" });
+    setFont("bold");
+    textSmart(rightLabel, tableRight - 3, textY, { align: "right" });
 
     y += rowH;
   }
 
-  // Draw table border
   pdf.setDrawColor(224, 224, 224);
 
   const durationText = report.durationDays === 1 ? "day" : "days";
@@ -162,9 +197,9 @@ export async function GET(
   // Verification text
   pdf.setFontSize(8);
   pdf.setTextColor(51, 51, 51);
-  pdf.setFont("Helvetica", "bold");
-  pdf.text("للتحقق من بيانات التقرير يرجى التأكد من زيارة موقع منصة صحة الرسمي", W / 2, bottomY + 14, { align: "center" });
-  pdf.text("To check the report please visit Seha's official website", W / 2, bottomY + 20, { align: "center" });
+  setFont("bold");
+  textSmart("للتحقق من بيانات التقرير يرجى التأكد من زيارة موقع منصة صحة الرسمي", W / 2, bottomY + 14, { align: "center" });
+  textSmart("To check the report please visit Seha's official website", W / 2, bottomY + 20, { align: "center" });
 
   // MOH Logo
   if (mohLogo) {
@@ -176,10 +211,10 @@ export async function GET(
 
   // Hospital names
   pdf.setFontSize(12);
-  pdf.setFont("Helvetica", "bold");
+  setFont("bold");
   pdf.setTextColor(51, 51, 51);
-  pdf.text(report.hospitalNameAr, 15, 18);
-  pdf.text(report.hospitalNameEn, W - 15, 18, { align: "right" });
+  textSmart(report.hospitalNameAr, 15, 18);
+  textSmart(report.hospitalNameEn, W - 15, 18, { align: "right" });
 
   // Separator line
   pdf.setDrawColor(204, 204, 204);
@@ -192,11 +227,13 @@ export async function GET(
   }
 
   // Inquiry link
+  pdf.setFont("Helvetica", "normal");
   pdf.setFontSize(10);
   pdf.setTextColor(47, 109, 180);
   pdf.textWithLink(inquiryUrl, 15, 30, { url: inquiryUrl });
 
   // Time and Date
+  setFont("normal");
   pdf.setFontSize(10);
   pdf.setTextColor(51, 51, 51);
   pdf.text(
