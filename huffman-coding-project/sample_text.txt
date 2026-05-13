@@ -1,0 +1,32 @@
+The Huffman coding algorithm is a greedy algorithm used for lossless data compression.
+It was developed by David A. Huffman while he was a student at MIT in 1952.
+The algorithm builds a binary tree based on the frequency of characters in the input data.
+Characters that appear more frequently are assigned shorter binary codes, while less frequent
+characters receive longer codes. This ensures that the total number of bits used to represent
+the data is minimized, achieving optimal prefix-free encoding.
+
+Huffman coding is widely used in various applications including file compression formats
+such as ZIP and GZIP, image formats like JPEG and PNG, and multimedia codecs like MP3.
+The algorithm demonstrates the greedy-choice property because at each step it merges the
+two nodes with the lowest frequencies, making the locally optimal choice that leads to
+a globally optimal solution.
+
+The process begins by counting the frequency of each character in the input text.
+These frequencies are then used to build a priority queue (min-heap), where each node
+represents a character and its frequency. The algorithm repeatedly extracts the two nodes
+with the smallest frequencies, creates a new internal node with these two nodes as children
+and a frequency equal to the sum of their frequencies, and inserts this new node back into
+the priority queue. This process continues until only one node remains, which becomes the
+root of the Huffman tree.
+
+To generate the binary codes, we traverse the tree from the root to each leaf node.
+Moving to the left child appends a '0' to the code, while moving to the right child
+appends a '1'. The resulting codes are prefix-free, meaning no code is a prefix of
+another code, which allows for unambiguous decoding.
+
+Data compression is essential in modern computing for reducing storage requirements and
+transmission bandwidth. Huffman coding provides an elegant and efficient solution to this
+problem, and its greedy approach guarantees optimal results for symbol-by-symbol encoding.
+The compression ratio achieved depends on the statistical distribution of characters in
+the input data. For highly skewed distributions, Huffman coding can achieve significant
+compression, while for uniform distributions, the compression may be minimal.
