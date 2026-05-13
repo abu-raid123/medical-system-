@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import QRCode from "qrcode";
 import ReportTemplate from "@/components/ReportTemplate";
-import PdfDownloadButton from "@/components/PdfDownloadButton";
 
 export default async function ReportPage({
   params,
@@ -52,7 +51,13 @@ export default async function ReportPage({
             </p>
           </div>
           <div className="flex gap-3">
-            <PdfDownloadButton leaveId={report.leaveId} reportId={id} />
+            <a
+              href={`/api/reports/${id}/pdf`}
+              className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition flex items-center gap-2"
+              download
+            >
+              ⬇ تحميل PDF
+            </a>
             <Link
               href="/create"
               className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg transition"

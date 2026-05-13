@@ -1,4 +1,5 @@
 import { createReportAction } from "./actions";
+import FormAutoSave from "@/components/FormAutoSave";
 
 export default function CreatePage() {
   const today = new Date().toISOString().split("T")[0];
@@ -35,6 +36,7 @@ export default function CreatePage() {
         </div>
       </div>
 
+      <FormAutoSave />
       <form action={createReportAction} className="max-w-4xl mx-auto px-4 py-8">
         {/* Patient Information */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
