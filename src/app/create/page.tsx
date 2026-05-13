@@ -116,16 +116,21 @@ export default function CreatePage() {
       durationDays,
     };
 
-    const res = await fetch("/api/reports", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    const data = await res.json();
-    if (data.success) {
-      router.push(`/report/${data.id}`);
-    } else {
+      const data = await res.json();
+      if (data.success) {
+        router.push(`/report/${data.id}`);
+      } else {
+        alert("حدث خطأ أثناء حفظ التقرير");
+        setLoading(false);
+      }
+    } catch {
       alert("حدث خطأ أثناء حفظ التقرير");
       setLoading(false);
     }
